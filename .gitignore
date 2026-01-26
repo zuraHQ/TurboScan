@@ -1,0 +1,9 @@
+# OS / editor junk
+.DS_Store
+.cursor/
+
+# Dependencies
+node_modules/
+
+# Local downloads
+apps/server/downloads/

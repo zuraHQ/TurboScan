@@ -1,0 +1,12 @@
+{
+    "name": "my-project",
+    "private": true,
+    "version": "1.0.0",
+    "workspaces": ["apps/*"],
+    "scripts": {
+      "dev:web": "bun dev apps/web",
+      "dev:server": "bun run dev --cwd apps/server",
+      "dev": "bun run dev:web & bun run dev:server"
+    }
+  }
+  
