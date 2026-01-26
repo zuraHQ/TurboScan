@@ -15,7 +15,7 @@ Needs on frontend:
 Other:
 - Slack bot ( mb different project ) - to use same agent on slack
 - CLI for free use with integration of claude locally
-- MCP - super useful give context to agents
+- MCP - super useful give context to agents <- take your context anywhere
 
 
 
