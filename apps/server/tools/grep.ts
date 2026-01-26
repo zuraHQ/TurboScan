@@ -5,7 +5,7 @@ export function grep(
     pattern: string, 
     dir: string,
     options?: { 
-      fileExtensions?: string[]; // e.g., ['.ts', '.tsx', '.js']
+      fileExtensions?: string[];
       caseSensitive?: boolean;
     }
   ): { file: string; line: number; content: string }[] {
