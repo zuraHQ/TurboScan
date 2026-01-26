@@ -3,10 +3,10 @@ import path from "path";
 import fs from "fs";
 import { execSync } from "child_process";
 
-const app = Fastify({ logger: true });
+const app = Fastify({ logger: true })
 
-// Persistent repo folder (Railway: /app/repositories)
-const REPO_FOLDER = path.join(process.cwd(), "downloads"); // change to /app/repositories on Railway
+// Persistent repo folder (Railway: /app/repositories) change to /app/repositories on Railway
+const REPO_FOLDER = path.join(process.cwd(), "downloads");
 fs.mkdirSync(REPO_FOLDER, { recursive: true });
 
 app.post("/download", async (req, reply) => {
@@ -30,17 +30,9 @@ app.post("/download", async (req, reply) => {
   }
 });
 
-// --------------------
-// POST /query
-// Placeholder endpoint for AI tools (listFiles, readFile, grep, glob)
-// --------------------
-app.post("/query", async (req, reply) => {
-  const { repoName, tool, args } = req.body as {
-    repoName: string;
-    tool: string;
-    args?: any;
-  };
 
+app.post("/query", async (req, reply) => {
+  const { repoName, tool, args } = req.body as { repoName: string; tool: string; args?: any };
 
   const repoPath = path.join(REPO_FOLDER, repoName);
   if (!fs.existsSync(repoPath)) {

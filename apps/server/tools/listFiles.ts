@@ -11,7 +11,6 @@ export function listFiles(dir: string): string[] {
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
   } catch {
-    // e.g. permission issues or transient filesystem errors
     return results;
   }
   

@@ -26,7 +26,6 @@ export function grep(
         if (entry.isDirectory()) {
           search(fullPath);
         } else {
-          // Filter by extension if specified
           if (fileExtensions && !fileExtensions.some(ext => entry.name.endsWith(ext))) {
             continue;
           }
@@ -45,7 +44,6 @@ export function grep(
               }
             });
           } catch (err) {
-            // Skip binary files or permission errors
           }
         }
       }
