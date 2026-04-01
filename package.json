@@ -1,12 +1,17 @@
 {
-    "name": "my-project",
-    "private": true,
-    "version": "1.0.0",
-    "workspaces": ["apps/*"],
-    "scripts": {
-      "dev:web": "bun dev apps/web",
-      "dev:server": "bun run dev --cwd apps/server",
-      "dev": "bun run dev:web & bun run dev:server"
-    }
+  "name": "reposcope",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint"
+  },
+  "packageManager": "bun@1.3.11",
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "tailwindcss": "^4.2.2",
+    "turbo": "^2.9.3"
   }
-  
+}

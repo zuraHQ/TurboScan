@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import path from "path";
 import fs from "fs";
 import { execSync } from "child_process";
+import { getCodeStructure, findSymbol, getDependencyGraph, parseFile, parseDirectory } from "./tools/index.ts";
 
 const app = Fastify({ logger: true })
 
@@ -21,8 +22,10 @@ app.post("/download", async (req, reply) => {
   }
 
   try {
-    console.log(`Cloning ${repoUrl} into {downloadPath}`);
-    execSync(`git clone ${repoUrl} ${downloadPath}`, { stdio: "inherit" });
+    console.log(`Cloning ${repoUrl} into ${downloadPath}`);
+    execSync(`git clone --depth 1 ${repoUrl} ${downloadPath}`, { stdio: "inherit" });
+    // Pre-warm the tree-sitter cache so first query is instant
+    parseDirectory(downloadPath);
     return reply.send({ message: "Repo downloaded successfully", path: downloadPath });
   } catch (err) {
     console.error(err);
@@ -46,6 +49,60 @@ app.post("/query", async (req, reply) => {
     tool,
     args,
   });
+});
+
+// Get full code structure of a repo (classes, functions, interfaces, imports)
+app.post("/structure", async (req, reply) => {
+  const { repoName } = req.body as { repoName: string };
+
+  const repoPath = path.join(REPO_FOLDER, repoName);
+  if (!fs.existsSync(repoPath)) {
+    return reply.status(400).send({ error: "Repo not found" });
+  }
+
+  const structure = getCodeStructure(repoPath);
+  return reply.send(structure);
+});
+
+// Find symbols by name across a repo
+app.post("/symbols", async (req, reply) => {
+  const { repoName, query } = req.body as { repoName: string; query: string };
+
+  const repoPath = path.join(REPO_FOLDER, repoName);
+  if (!fs.existsSync(repoPath)) {
+    return reply.status(400).send({ error: "Repo not found" });
+  }
+
+  const symbols = findSymbol(repoPath, query);
+  return reply.send({ symbols, count: symbols.length });
+});
+
+// Parse a single file for its symbols
+app.post("/parse", async (req, reply) => {
+  const { repoName, filePath } = req.body as { repoName: string; filePath: string };
+
+  const repoPath = path.join(REPO_FOLDER, repoName);
+  const fullPath = path.join(repoPath, filePath);
+
+  if (!fullPath.startsWith(repoPath) || !fs.existsSync(fullPath)) {
+    return reply.status(400).send({ error: "File not found or invalid path" });
+  }
+
+  const symbols = parseFile(fullPath);
+  return reply.send({ file: filePath, symbols });
+});
+
+// Get dependency graph (which files import what)
+app.post("/dependencies", async (req, reply) => {
+  const { repoName } = req.body as { repoName: string };
+
+  const repoPath = path.join(REPO_FOLDER, repoName);
+  if (!fs.existsSync(repoPath)) {
+    return reply.status(400).send({ error: "Repo not found" });
+  }
+
+  const graph = getDependencyGraph(repoPath);
+  return reply.send(graph);
 });
 
 await app.listen({ port: 4000 });
