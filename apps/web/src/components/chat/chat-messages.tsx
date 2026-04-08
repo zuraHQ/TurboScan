@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -19,7 +18,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm opacity-60">
           Clone a repo and start asking questions.
         </p>
       </div>
@@ -27,7 +26,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
   }
 
   return (
-    <ScrollArea className="flex-1">
+    <div className="flex-1 overflow-y-auto">
       <div className="flex flex-col gap-4 p-4">
         {messages.map((msg, i) => (
           <div
@@ -35,26 +34,33 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
             className={cn(
               "flex flex-col gap-1 rounded-lg px-4 py-3",
               msg.role === "user"
-                ? "ml-auto max-w-[80%] bg-primary text-primary-foreground"
-                : "mr-auto max-w-[80%] bg-muted text-foreground"
+                ? "chat chat-end"
+                : "chat chat-start"
             )}
           >
-            <span className="text-xs font-medium opacity-70">
+            <div className="chat-header text-xs font-medium opacity-70">
               {msg.role === "user" ? "You" : "Reposcope"}
-            </span>
-            <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+            </div>
+            <div className={cn(
+              "chat-bubble",
+              msg.role === "user" ? "chat-bubble-primary" : "chat-bubble-neutral"
+            )}>
+              <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+            </div>
           </div>
         ))}
         {isLoading && (
-          <div className="mr-auto max-w-[80%] rounded-lg bg-muted px-4 py-3">
-            <span className="text-xs font-medium text-muted-foreground">
+          <div className="chat chat-start">
+            <div className="chat-header text-xs font-medium opacity-70">
               Reposcope
-            </span>
-            <p className="text-sm text-muted-foreground">Thinking...</p>
+            </div>
+            <div className="chat-bubble chat-bubble-neutral">
+              <span className="loading loading-dots loading-sm"></span>
+            </div>
           </div>
         )}
         <div ref={bottomRef} />
       </div>
-    </ScrollArea>
+    </div>
   );
 }

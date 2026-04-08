@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Send } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 
 interface ChatInputProps {
   onSend: (content: string) => void;
@@ -27,7 +25,8 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
 
   return (
     <div className="flex items-end gap-2">
-      <Textarea
+      <textarea
+        className="textarea textarea-bordered min-h-[60px] flex-1 resize-none"
         placeholder={
           disabled
             ? "Clone a repo first to start chatting..."
@@ -38,15 +37,14 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         onKeyDown={handleKeyDown}
         disabled={disabled}
         rows={2}
-        className="min-h-[60px] flex-1 resize-none"
       />
-      <Button
+      <button
+        className="btn btn-primary btn-square"
         onClick={handleSend}
         disabled={disabled || !value.trim()}
-        size="icon"
       >
         <Send className="size-4" />
-      </Button>
+      </button>
     </div>
   );
 }

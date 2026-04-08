@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 
 interface RepoInputProps {
@@ -33,7 +31,9 @@ export function RepoInput({ onCloned }: RepoInputProps) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <Input
+        <input
+          type="text"
+          className="input input-bordered flex-1"
           placeholder="Paste a GitHub repo URL..."
           value={url}
           onChange={(e) => setUrl(e.target.value)}
@@ -41,14 +41,13 @@ export function RepoInput({ onCloned }: RepoInputProps) {
             if (e.key === "Enter") handleSubmit();
           }}
           disabled={isLoading}
-          className="flex-1"
         />
-        <Button onClick={handleSubmit} disabled={isLoading || !url.trim()}>
+        <button className="btn btn-primary" onClick={handleSubmit} disabled={isLoading || !url.trim()}>
           {isLoading ? <Loader2 className="size-4 animate-spin" /> : "Clone"}
-        </Button>
+        </button>
       </div>
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="text-sm text-error">{error}</p>
       )}
     </div>
   );

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Folder, File, ChevronRight, ChevronDown, X } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
+import { Folder, File, ChevronRight, ChevronDown, X, Circle, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export type ScanStatus = "idle" | "queued" | "scanning" | "done";
 
 const DRAFT_FILES: FileNode[] = [
   {
@@ -135,18 +136,31 @@ export type FileNode = {
   children?: FileNode[];
 };
 
+function ScanIndicator({ status }: { status: ScanStatus }) {
+  if (status === "scanning") {
+    return <Circle className="file-scan-dot hidden size-2 shrink-0 fill-primary text-primary" />;
+  }
+  if (status === "done") {
+    return <CheckCircle2 className="size-3 shrink-0 text-success opacity-70" />;
+  }
+  return null;
+}
+
 function FileTreeItem({
   node,
   depth = 0,
   selectedFile,
   onSelectFile,
+  scanMap,
 }: {
   node: FileNode;
   depth?: number;
   selectedFile: string | null;
   onSelectFile: (path: string) => void;
+  scanMap: Record<string, ScanStatus>;
 }) {
   const [open, setOpen] = useState(node.type === "folder");
+  const scanStatus = node.path ? (scanMap[node.path] ?? "idle") : "idle";
 
   function handleClick() {
     if (node.type === "folder") {
@@ -162,11 +176,15 @@ function FileTreeItem({
     <>
       <div
         onClick={handleClick}
-        className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors cursor-pointer ${
+        className={cn(
+          "flex items-center gap-1.5 px-2 py-1.5 text-sm transition-all cursor-pointer",
           isSelected
-            ? "bg-accent text-accent-foreground"
-            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-        }`}
+            ? "bg-base-300 text-base-content"
+            : "text-base-content/60 hover:bg-base-200 hover:text-base-content",
+          scanStatus === "scanning" && "file-scan-active",
+          scanStatus === "done" && "file-scan-done",
+          scanStatus === "queued" && "file-scan-queued"
+        )}
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
       >
         {node.type === "folder" ? (
@@ -180,7 +198,9 @@ function FileTreeItem({
           </>
         ) : (
           <>
-            <span className="size-3.5 shrink-0" />
+            <ScanIndicator status={scanStatus} />
+            {scanStatus === "idle" && <span className="size-3.5 shrink-0" />}
+            {scanStatus === "queued" && <span className="size-3.5 shrink-0" />}
             <File className="size-3.5 shrink-0" />
           </>
         )}
@@ -195,29 +215,37 @@ function FileTreeItem({
             depth={depth + 1}
             selectedFile={selectedFile}
             onSelectFile={onSelectFile}
+            scanMap={scanMap}
           />
         ))}
     </>
   );
 }
 
-export function FileTree({ selectedFile, onSelectFile }: { selectedFile: string | null; onSelectFile: (path: string) => void }) {
+interface FileTreeProps {
+  selectedFile: string | null;
+  onSelectFile: (path: string) => void;
+  scanMap?: Record<string, ScanStatus>;
+}
+
+export function FileTree({ selectedFile, onSelectFile, scanMap = {} }: FileTreeProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 px-3 py-2">
-        <Folder className="size-4 text-muted-foreground" />
-        <span className="text-xs font-medium text-muted-foreground">Files</span>
+        <Folder className="size-4 text-base-content/60" />
+        <span className="text-xs font-medium text-base-content/60">Files</span>
       </div>
-      <ScrollArea className="flex-1 px-1 pb-2">
+      <div className="flex-1 overflow-y-auto pb-2">
         {DRAFT_FILES.map((node) => (
           <FileTreeItem
             key={node.name}
             node={node}
             selectedFile={selectedFile}
             onSelectFile={onSelectFile}
+            scanMap={scanMap}
           />
         ))}
-      </ScrollArea>
+      </div>
     </div>
   );
 }
@@ -226,18 +254,18 @@ export function FilePreview({ filePath, onClose }: { filePath: string; onClose: 
   const content = DRAFT_FILE_CONTENTS[filePath];
 
   return (
-    <div className="flex h-full flex-col bg-background">
-      <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
-        <span className="truncate text-xs font-medium text-muted-foreground">{filePath}</span>
-        <Button variant="ghost" size="icon-xs" onClick={onClose}>
+    <div className="flex h-full flex-col bg-base-100">
+      <div className="flex items-center justify-between border-b border-base-300 px-3 py-1.5">
+        <span className="truncate text-xs font-medium text-base-content/60">{filePath}</span>
+        <button className="btn btn-ghost btn-xs btn-square" onClick={onClose}>
           <X className="size-3" />
-        </Button>
+        </button>
       </div>
-      <ScrollArea className="flex-1">
-        <pre className="p-3 text-xs leading-relaxed text-foreground">
+      <div className="flex-1 overflow-y-auto">
+        <pre className="p-3 text-xs leading-relaxed text-base-content">
           <code>{content ?? "File not found"}</code>
         </pre>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

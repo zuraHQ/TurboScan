@@ -8,7 +8,10 @@ function getSystemTheme(): "light" | "dark" {
 
 function applyTheme(theme: Theme) {
   const resolved = theme === "system" ? getSystemTheme() : theme;
-  document.documentElement.classList.toggle("dark", resolved === "dark");
+  document.documentElement.setAttribute(
+    "data-theme",
+    resolved === "dark" ? "synthwave" : "nord"
+  );
 }
 
 export function useTheme() {
@@ -21,7 +24,6 @@ export function useTheme() {
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  // Listen for system theme changes when in system mode
   useEffect(() => {
     if (theme !== "system") return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");

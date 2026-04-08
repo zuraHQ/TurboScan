@@ -1,25 +1,24 @@
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 
 export function LandingPage() {
   return (
-    <div className="flex h-screen flex-col items-center justify-center bg-background">
+    <div className="flex h-screen flex-col items-center justify-center bg-base-100">
       <div className="flex max-w-md flex-col items-center gap-6 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground">
+        <h1 className="text-4xl font-bold tracking-tight">
           Reposcope
         </h1>
-        <p className="text-lg text-muted-foreground">
+        <p className="text-lg opacity-70">
           AI-powered codebase intelligence. Clone repos, analyze them with AI
           agents, and chat about the code — with a live file tree that shows
           exactly where the AI is looking.
         </p>
         <div className="flex items-center gap-4">
-          <Button size="lg" render={<Link to="/sign-up" />}>
+          <Link to="/sign-up" className="btn btn-primary btn-lg">
             Get Started
-          </Button>
-          <Button variant="ghost" size="lg" render={<Link to="/sign-in" />}>
+          </Link>
+          <Link to="/sign-in" className="btn btn-ghost btn-lg">
             Sign In
-          </Button>
+          </Link>
         </div>
       </div>
     </div>
