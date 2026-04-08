@@ -182,7 +182,7 @@ function FileTreeItem({
         ) : (
           <>
             {scanStatus === "done" ? (
-              <ScanLine className="size-3.5 shrink-0 text-primary" />
+              <ScanLine className="size-3.5 shrink-0 text-base-content/50" />
             ) : (
               <span className="size-3.5 shrink-0" />
             )}

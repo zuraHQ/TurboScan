@@ -7,17 +7,17 @@
 
 @plugin "daisyui/theme" {
   name: "nord";
-  --color-primary: #853BCE;
+  --color-primary: #e87a2d;
   --color-primary-content: #fff;
 }
 
 @plugin "daisyui/theme" {
   name: "synthwave";
-  --color-base-100: #13111C;
-  --color-base-200: #0f0d17;
-  --color-base-300: #0b0a12;
+  --color-base-100: #1e1e1e;
+  --color-base-200: #181818;
+  --color-base-300: #121212;
   --color-base-content: #ffffff;
-  --color-primary: #853BCE;
+  --color-primary: #e87a2d;
   --color-primary-content: #fff;
   --color-secondary: #6d28d9;
   --color-secondary-content: #ede9fe;
@@ -41,6 +41,8 @@
   select:focus {
     outline: none !important;
     box-shadow: none !important;
+    border-color: oklch(0.85 0 0 / 0.5) !important;
+    background: transparent !important;
   }
 }
 
@@ -53,14 +55,14 @@
 .file-scan-active {
   position: relative;
   overflow: hidden;
-  background: oklch(0.65 0.15 300 / 0.04);
+  background: oklch(0.85 0 0 / 0.04);
 }
 
 .file-scan-active::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: oklch(0.65 0.15 300 / 0.12);
+  background: oklch(0.85 0 0 / 0.12);
   transform-origin: left center;
   animation: scan-radar 0.6s ease-out infinite;
 }
