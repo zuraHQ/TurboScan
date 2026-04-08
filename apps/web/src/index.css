@@ -16,7 +16,7 @@
   --color-base-100: #13111C;
   --color-base-200: #0f0d17;
   --color-base-300: #0b0a12;
-  --color-base-content: #e2dff0;
+  --color-base-content: #ffffff;
   --color-primary: #853BCE;
   --color-primary-content: #fff;
   --color-secondary: #6d28d9;
@@ -28,10 +28,7 @@
   --radius-box: 0.5rem;
 }
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
-    --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
 }
 
@@ -47,10 +44,10 @@
   }
 }
 
-/* AI file scan animation — shimmer */
-@keyframes scan-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+/* AI file scan animation — radar */
+@keyframes scan-radar {
+  0% { transform: scaleX(0); opacity: 0.6; }
+  100% { transform: scaleX(1); opacity: 0; }
 }
 
 .file-scan-active {
@@ -63,21 +60,14 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    oklch(0.65 0.15 300 / 0.12) 50%,
-    transparent 100%
-  );
-  animation: scan-shimmer 0.8s ease-in-out infinite;
+  background: oklch(0.65 0.15 300 / 0.12);
+  transform-origin: left center;
+  animation: scan-radar 0.6s ease-out infinite;
 }
 
-.file-scan-active .file-scan-dot {
-  display: block;
-}
+
 
 .file-scan-done {
-  background: oklch(0.7 0.18 145 / 0.06);
 }
 
 .file-scan-queued {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Folder, File, ChevronRight, ChevronDown, X, Circle, CheckCircle2 } from "lucide-react";
+import { Folder, File, X, ScanLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ScanStatus = "idle" | "queued" | "scanning" | "done";
@@ -136,16 +136,6 @@ export type FileNode = {
   children?: FileNode[];
 };
 
-function ScanIndicator({ status }: { status: ScanStatus }) {
-  if (status === "scanning") {
-    return <Circle className="file-scan-dot hidden size-2 shrink-0 fill-primary text-primary" />;
-  }
-  if (status === "done") {
-    return <CheckCircle2 className="size-3 shrink-0 text-success opacity-70" />;
-  }
-  return null;
-}
-
 function FileTreeItem({
   node,
   depth = 0,
@@ -188,19 +178,14 @@ function FileTreeItem({
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
       >
         {node.type === "folder" ? (
-          <>
-            {open ? (
-              <ChevronDown className="size-3.5 shrink-0" />
-            ) : (
-              <ChevronRight className="size-3.5 shrink-0" />
-            )}
-            <Folder className="size-3.5 shrink-0 text-blue-400" />
-          </>
+          <Folder className="size-3.5 shrink-0 text-blue-400" />
         ) : (
           <>
-            <ScanIndicator status={scanStatus} />
-            {scanStatus === "idle" && <span className="size-3.5 shrink-0" />}
-            {scanStatus === "queued" && <span className="size-3.5 shrink-0" />}
+            {scanStatus === "done" ? (
+              <ScanLine className="size-3.5 shrink-0 text-primary" />
+            ) : (
+              <span className="size-3.5 shrink-0" />
+            )}
             <File className="size-3.5 shrink-0" />
           </>
         )}
