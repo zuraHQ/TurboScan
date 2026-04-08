@@ -1,0 +1,243 @@
+import { useState } from "react";
+import { Folder, File, ChevronRight, ChevronDown, X } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+
+const DRAFT_FILES: FileNode[] = [
+  {
+    name: "src",
+    type: "folder",
+    children: [
+      { name: "index.ts", type: "file", path: "src/index.ts" },
+      { name: "App.tsx", type: "file", path: "src/App.tsx" },
+      {
+        name: "components",
+        type: "folder",
+        children: [
+          { name: "Header.tsx", type: "file", path: "src/components/Header.tsx" },
+          { name: "Sidebar.tsx", type: "file", path: "src/components/Sidebar.tsx" },
+          { name: "Button.tsx", type: "file", path: "src/components/Button.tsx" },
+        ],
+      },
+      {
+        name: "hooks",
+        type: "folder",
+        children: [
+          { name: "useAuth.ts", type: "file", path: "src/hooks/useAuth.ts" },
+          { name: "useTheme.ts", type: "file", path: "src/hooks/useTheme.ts" },
+        ],
+      },
+    ],
+  },
+  { name: "package.json", type: "file", path: "package.json" },
+  { name: "tsconfig.json", type: "file", path: "tsconfig.json" },
+  { name: "README.md", type: "file", path: "README.md" },
+];
+
+const DRAFT_FILE_CONTENTS: Record<string, string> = {
+  "src/index.ts": `import { createRoot } from "react-dom/client";
+import App from "./App";
+
+const root = createRoot(document.getElementById("root")!);
+root.render(<App />);`,
+  "src/App.tsx": `import { Header } from "./components/Header";
+import { Sidebar } from "./components/Sidebar";
+
+export default function App() {
+  return (
+    <div className="flex h-screen">
+      <Sidebar />
+      <main className="flex-1">
+        <Header />
+        <div className="p-4">Content</div>
+      </main>
+    </div>
+  );
+}`,
+  "src/components/Header.tsx": `export function Header() {
+  return (
+    <header className="border-b px-4 py-3">
+      <h1 className="text-lg font-semibold">My App</h1>
+    </header>
+  );
+}`,
+  "src/components/Sidebar.tsx": `export function Sidebar() {
+  return (
+    <aside className="w-64 border-r bg-muted/40 p-4">
+      <nav>Navigation</nav>
+    </aside>
+  );
+}`,
+  "src/components/Button.tsx": `interface ButtonProps {
+  children: React.ReactNode;
+  onClick?: () => void;
+  variant?: "primary" | "secondary";
+}
+
+export function Button({ children, onClick, variant = "primary" }: ButtonProps) {
+  return (
+    <button onClick={onClick} data-variant={variant}>
+      {children}
+    </button>
+  );
+}`,
+  "src/hooks/useAuth.ts": `import { useState, useEffect } from "react";
+
+export function useAuth() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check auth state
+    setLoading(false);
+  }, []);
+
+  return { user, loading };
+}`,
+  "src/hooks/useTheme.ts": `import { useState, useEffect } from "react";
+
+type Theme = "light" | "dark" | "system";
+
+export function useTheme() {
+  const [theme, setTheme] = useState<Theme>("system");
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [theme]);
+
+  return { theme, setTheme };
+}`,
+  "package.json": `{
+  "name": "my-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}`,
+  "tsconfig.json": `{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "strict": true,
+    "jsx": "react-jsx"
+  }
+}`,
+  "README.md": `# My App
+
+A sample project for file explorer preview.`,
+};
+
+export type FileNode = {
+  name: string;
+  type: "file" | "folder";
+  path?: string;
+  children?: FileNode[];
+};
+
+function FileTreeItem({
+  node,
+  depth = 0,
+  selectedFile,
+  onSelectFile,
+}: {
+  node: FileNode;
+  depth?: number;
+  selectedFile: string | null;
+  onSelectFile: (path: string) => void;
+}) {
+  const [open, setOpen] = useState(node.type === "folder");
+
+  function handleClick() {
+    if (node.type === "folder") {
+      setOpen(!open);
+    } else if (node.path) {
+      onSelectFile(node.path);
+    }
+  }
+
+  const isSelected = node.type === "file" && node.path === selectedFile;
+
+  return (
+    <>
+      <div
+        onClick={handleClick}
+        className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors cursor-pointer ${
+          isSelected
+            ? "bg-accent text-accent-foreground"
+            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        }`}
+        style={{ paddingLeft: `${depth * 12 + 8}px` }}
+      >
+        {node.type === "folder" ? (
+          <>
+            {open ? (
+              <ChevronDown className="size-3.5 shrink-0" />
+            ) : (
+              <ChevronRight className="size-3.5 shrink-0" />
+            )}
+            <Folder className="size-3.5 shrink-0 text-blue-400" />
+          </>
+        ) : (
+          <>
+            <span className="size-3.5 shrink-0" />
+            <File className="size-3.5 shrink-0" />
+          </>
+        )}
+        <span className="truncate">{node.name}</span>
+      </div>
+      {node.type === "folder" &&
+        open &&
+        node.children?.map((child) => (
+          <FileTreeItem
+            key={child.name}
+            node={child}
+            depth={depth + 1}
+            selectedFile={selectedFile}
+            onSelectFile={onSelectFile}
+          />
+        ))}
+    </>
+  );
+}
+
+export function FileTree({ selectedFile, onSelectFile }: { selectedFile: string | null; onSelectFile: (path: string) => void }) {
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center gap-2 px-3 py-2">
+        <Folder className="size-4 text-muted-foreground" />
+        <span className="text-xs font-medium text-muted-foreground">Files</span>
+      </div>
+      <ScrollArea className="flex-1 px-1 pb-2">
+        {DRAFT_FILES.map((node) => (
+          <FileTreeItem
+            key={node.name}
+            node={node}
+            selectedFile={selectedFile}
+            onSelectFile={onSelectFile}
+          />
+        ))}
+      </ScrollArea>
+    </div>
+  );
+}
+
+export function FilePreview({ filePath, onClose }: { filePath: string; onClose: () => void }) {
+  const content = DRAFT_FILE_CONTENTS[filePath];
+
+  return (
+    <div className="flex h-full flex-col bg-background">
+      <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
+        <span className="truncate text-xs font-medium text-muted-foreground">{filePath}</span>
+        <Button variant="ghost" size="icon-xs" onClick={onClose}>
+          <X className="size-3" />
+        </Button>
+      </div>
+      <ScrollArea className="flex-1">
+        <pre className="p-3 text-xs leading-relaxed text-foreground">
+          <code>{content ?? "File not found"}</code>
+        </pre>
+      </ScrollArea>
+    </div>
+  );
+}

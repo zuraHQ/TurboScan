@@ -1,4 +1,6 @@
-import Fastify from "fastify";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 import path from "path";
 import fs from "fs";
 import { execSync } from "child_process";
@@ -6,134 +8,121 @@ import { getCodeStructure, findSymbol, getDependencyGraph, parseFile, parseDirec
 import { uploadDirectory } from "./lib/bucket.ts";
 import { ensureLocalRepo } from "./lib/repo.ts";
 import { authMiddleware } from "./middleware/auth.ts";
-import { clerkWebhookRoute } from "./routes/webhooks/clerk.ts";
-import { stripeWebhookRoute } from "./routes/webhooks/stripe.ts";
-import { chatRoute } from "./routes/chat.ts";
+import { clerkWebhook } from "./routes/webhooks/clerk.ts";
+import { stripeWebhook } from "./routes/webhooks/stripe.ts";
+import { chatApp } from "./routes/chat.ts";
 
-const app = Fastify({ logger: true });
+const app = new Hono();
 
-// Register CORS
-app.register(import("@fastify/cors"), {
+// Middleware
+app.use(logger());
+app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:5173",
   credentials: true,
-});
+}));
+app.use(authMiddleware);
 
-// Global auth hook — skip webhooks
-app.addHook("onRequest", async (req, reply) => {
-  if (req.url.startsWith("/webhooks/")) return;
-  await authMiddleware(req, reply);
-});
+// Webhook routes
+app.route("/webhooks", clerkWebhook);
+app.route("/webhooks", stripeWebhook);
 
-// Register plugins
-app.register(clerkWebhookRoute);
-app.register(stripeWebhookRoute);
-app.register(chatRoute);
+// Chat routes
+app.route("/", chatApp);
 
 // Persistent repo folder
 const REPO_FOLDER = path.join(process.cwd(), "downloads");
 fs.mkdirSync(REPO_FOLDER, { recursive: true });
 
-app.post("/download", async (req, reply) => {
-  const { repoUrl } = req.body as { repoUrl: string };
-  if (!repoUrl) return reply.status(400).send({ error: "repoUrl is required" });
+app.post("/download", async (c) => {
+  const { repoUrl } = await c.req.json<{ repoUrl: string }>();
+  if (!repoUrl) return c.json({ error: "repoUrl is required" }, 400);
 
   const repoName = repoUrl.split("/").pop()?.replace(".git", "") || "repo";
   const downloadPath = path.join(REPO_FOLDER, repoName);
 
   if (fs.existsSync(downloadPath)) {
-    return reply.send({ message: "Repo already exists", repoName });
+    return c.json({ message: "Repo already exists", repoName });
   }
 
   try {
     console.log(`Cloning ${repoUrl} into ${downloadPath}`);
     execSync(`git clone --depth 1 ${repoUrl} ${downloadPath}`, { stdio: "inherit" });
-    // Pre-warm the tree-sitter cache so first query is instant
     parseDirectory(downloadPath);
-    // Upload to bucket and clean up local clone
     console.log(`Uploading ${repoName} to bucket...`);
     await uploadDirectory(downloadPath, repoName);
     fs.rmSync(downloadPath, { recursive: true, force: true });
     console.log(`Uploaded ${repoName} to bucket and removed local clone`);
-    return reply.send({ message: "Repo cloned and uploaded to bucket", repoName });
+    return c.json({ message: "Repo cloned and uploaded to bucket", repoName });
   } catch (err) {
     console.error(err);
-    return reply.status(500).send({ error: "Failed to download repo" });
+    return c.json({ error: "Failed to download repo" }, 500);
   }
 });
 
-app.post("/query", async (req, reply) => {
-  const { repoName, tool, args } = req.body as { repoName: string; tool: string; args?: any };
+app.post("/query", async (c) => {
+  const { repoName, tool, args } = await c.req.json<{ repoName: string; tool: string; args?: any }>();
 
   try {
     const repoPath = await ensureLocalRepo(repoName);
-    return reply.send({
-      message: "Tool query received",
-      repoPath,
-      tool,
-      args,
-    });
+    return c.json({ message: "Tool query received", repoPath, tool, args });
   } catch (err: any) {
-    return reply.status(400).send({ error: err.message });
+    return c.json({ error: err.message }, 400);
   }
 });
 
-// Get full code structure of a repo (classes, functions, interfaces, imports)
-app.post("/structure", async (req, reply) => {
-  const { repoName } = req.body as { repoName: string };
+app.post("/structure", async (c) => {
+  const { repoName } = await c.req.json<{ repoName: string }>();
 
   try {
     const repoPath = await ensureLocalRepo(repoName);
-    const structure = getCodeStructure(repoPath);
-    return reply.send(structure);
+    return c.json(getCodeStructure(repoPath));
   } catch (err: any) {
-    return reply.status(400).send({ error: err.message });
+    return c.json({ error: err.message }, 400);
   }
 });
 
-// Find symbols by name across a repo
-app.post("/symbols", async (req, reply) => {
-  const { repoName, query } = req.body as { repoName: string; query: string };
+app.post("/symbols", async (c) => {
+  const { repoName, query } = await c.req.json<{ repoName: string; query: string }>();
 
   try {
     const repoPath = await ensureLocalRepo(repoName);
     const symbols = findSymbol(repoPath, query);
-    return reply.send({ symbols, count: symbols.length });
+    return c.json({ symbols, count: symbols.length });
   } catch (err: any) {
-    return reply.status(400).send({ error: err.message });
+    return c.json({ error: err.message }, 400);
   }
 });
 
-// Parse a single file for its symbols
-app.post("/parse", async (req, reply) => {
-  const { repoName, filePath } = req.body as { repoName: string; filePath: string };
+app.post("/parse", async (c) => {
+  const { repoName, filePath } = await c.req.json<{ repoName: string; filePath: string }>();
 
   try {
     const repoPath = await ensureLocalRepo(repoName);
     const fullPath = path.join(repoPath, filePath);
 
     if (!fullPath.startsWith(repoPath) || !fs.existsSync(fullPath)) {
-      return reply.status(400).send({ error: "File not found or invalid path" });
+      return c.json({ error: "File not found or invalid path" }, 400);
     }
 
     const symbols = parseFile(fullPath);
-    return reply.send({ file: filePath, symbols });
+    return c.json({ file: filePath, symbols });
   } catch (err: any) {
-    return reply.status(400).send({ error: err.message });
+    return c.json({ error: err.message }, 400);
   }
 });
 
-// Get dependency graph (which files import what)
-app.post("/dependencies", async (req, reply) => {
-  const { repoName } = req.body as { repoName: string };
+app.post("/dependencies", async (c) => {
+  const { repoName } = await c.req.json<{ repoName: string }>();
 
   try {
     const repoPath = await ensureLocalRepo(repoName);
-    const graph = getDependencyGraph(repoPath);
-    return reply.send(graph);
+    return c.json(getDependencyGraph(repoPath));
   } catch (err: any) {
-    return reply.status(400).send({ error: err.message });
+    return c.json({ error: err.message }, 400);
   }
 });
 
-await app.listen({ port: 4000 });
-console.log("Server running on http://localhost:4000");
+export default {
+  port: 4000,
+  fetch: app.fetch,
+};

@@ -26,29 +26,27 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   }
 
   return (
-    <div className="border-t border-border p-4">
-      <div className="flex items-end gap-2">
-        <Textarea
-          placeholder={
-            disabled
-              ? "Clone a repo first to start chatting..."
-              : "Ask about the codebase..."
-          }
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          rows={2}
-          className="min-h-[60px] flex-1 resize-none"
-        />
-        <Button
-          onClick={handleSend}
-          disabled={disabled || !value.trim()}
-          size="icon"
-        >
-          <Send className="size-4" />
-        </Button>
-      </div>
+    <div className="flex items-end gap-2">
+      <Textarea
+        placeholder={
+          disabled
+            ? "Clone a repo first to start chatting..."
+            : "Ask about the codebase..."
+        }
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        disabled={disabled}
+        rows={2}
+        className="min-h-[60px] flex-1 resize-none"
+      />
+      <Button
+        onClick={handleSend}
+        disabled={disabled || !value.trim()}
+        size="icon"
+      >
+        <Send className="size-4" />
+      </Button>
     </div>
   );
 }

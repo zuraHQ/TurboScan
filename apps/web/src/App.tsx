@@ -5,7 +5,11 @@ import { SignInPage } from "@/pages/sign-in";
 import { SignUpPage } from "@/pages/sign-up";
 import { DashboardPage } from "@/pages/dashboard";
 
+const hasClerk = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  if (!hasClerk) return <>{children}</>;
+
   return (
     <>
       <SignedIn>{children}</SignedIn>
@@ -19,7 +23,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={hasClerk ? <LandingPage /> : <DashboardPage />} />
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
       <Route

@@ -1,19 +1,31 @@
-import type { FastifyRequest, FastifyReply } from "fastify";
+import { createMiddleware } from "hono/factory";
 import { createClerkClient } from "@clerk/backend";
 
-const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
+const clerkSecretKey = process.env.CLERK_SECRET_KEY;
 
-export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
-  const authHeader = req.headers.authorization;
+const clerk = clerkSecretKey
+  ? createClerkClient({ secretKey: clerkSecretKey })
+  : null;
+
+export const authMiddleware = createMiddleware(async (c, next) => {
+  // Skip auth for webhooks
+  if (c.req.path.startsWith("/webhooks/")) return next();
+
+  // Skip auth if Clerk is not configured (dev mode)
+  if (!clerk) return next();
+
+  const authHeader = c.req.header("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return reply.status(401).send({ error: "Unauthorized" });
+    return c.json({ error: "Unauthorized" }, 401);
   }
 
   const token = authHeader.split(" ")[1];
   try {
     const payload = await clerk.verifyToken(token!);
-    (req as any).auth = { userId: payload.sub };
+    c.set("auth", { userId: payload.sub });
   } catch {
-    return reply.status(401).send({ error: "Invalid token" });
+    return c.json({ error: "Invalid token" }, 401);
   }
-}
+
+  return next();
+});

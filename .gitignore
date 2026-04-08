@@ -1,6 +1,8 @@
 # OS / editor junk
 .DS_Store
 .cursor/
+.vscode/
+.claude/worktrees/
 
 # Turborepo
 .turbo
