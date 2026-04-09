@@ -10,8 +10,8 @@ AI-powered codebase intelligence platform. Clone repos, analyze them with AI age
 
 ## Apps
 
-### `apps/server` — Fastify API (Bun runtime)
-- Fastify 5 on Bun (not Express, not Node)
+### `apps/server` — Hono API (Bun runtime)
+- Hono on Bun (not Express, not Fastify, not Node)
 - Endpoints:
   - `POST /download` — shallow clone repos to disk (will migrate to R2)
   - `POST /query` — run tools on cloned repos
@@ -26,9 +26,36 @@ AI-powered codebase intelligence platform. Clone repos, analyze them with AI age
 - See `apps/server/CLAUDE.md` for Bun-specific conventions
 
 ### `apps/web` — Vite + React frontend
-- React 19, Vite 8, Tailwind CSS 4, shadcn/ui
-- Currently minimal — three-panel layout not yet built
+- React 19, Vite 8, Tailwind CSS 4, DaisyUI 5
+- TanStack Query installed and wired up (QueryClientProvider in main.tsx), not yet used
+- Clerk auth integrated (lazy-loaded, works without key in dev mode)
 - No SSR needed — this is a dashboard app behind auth
+
+#### UI Stack & Theming
+- **DaisyUI 5** — class-based components (btn, input, textarea, menu, chat, etc.)
+- **No shadcn/ui** — fully migrated away, no @base-ui, no CVA, no clsx/tailwind-merge
+- **Themes configured in `index.css`** via `@plugin "daisyui"` and `@plugin "daisyui/theme"`:
+  - **Light**: `nord` (default) — with orange primary `#e87a2d`
+  - **Dark**: `synthwave` (prefers-dark) — neutral dark grays (`#1e1e1e` / `#181818` / `#121212`), orange primary, white text
+- Theme switching via `data-theme` attribute on `<html>`, managed by `useTheme` hook
+- `cn()` utility in `src/lib/utils.ts` — simple class joiner, no tailwind-merge
+
+#### Layout (implemented)
+- **Three-panel layout** with card-style panels on `bg-base-200` background:
+  1. **Left sidebar** (`app-sidebar.tsx`) — chat history list, "New Chat" button, theme toggle, Clerk user button
+  2. **File tree sidebar** (`file-explorer.tsx`) — expandable file tree with AI scan animations
+  3. **Main area** — repo URL input, chat messages (DaisyUI chat bubbles), chat input
+- Panels have `border border-base-content/10`, `rounded-lg`, `bg-base-100`
+- Sidebar and file tree are toggleable
+
+#### AI Scan Animation System
+- File tree supports per-file scan states: `idle` | `queued` | `scanning` | `done`
+- `scanMap` prop on `FileTree` — `Record<string, ScanStatus>`
+- **Scanning**: radar animation (CSS `scan-radar` keyframes) — soft white pulse expanding left-to-right
+- **Done**: `ScanLine` icon from lucide-react appears next to file
+- **Queued**: dimmed at 50% opacity
+- Demo scan loop in `dashboard.tsx` (`useDemoScan` hook) — scans 5 files at 0.5s each, resets after 1s
+- **To wire up real scanning**: replace `useDemoScan` with WebSocket events, update `scanMap` state as agent hits each file
 
 ## Architecture Decisions
 
@@ -47,18 +74,6 @@ AI-powered codebase intelligence platform. Clone repos, analyze them with AI age
 - Extracts functions, classes, methods, interfaces, imports with line numbers and signatures
 - Makes the AI agent dramatically smarter — it can query structure instead of blindly searching
 
-## UI Concept
-
-Three-panel layout:
-1. **Left sidebar** — chat history list + "New chat" button
-2. **Middle sidebar** — file tree with live scanning visualization
-   - Files glow/highlight as AI scans them in real-time
-   - Tree stops and highlights the file the AI is referencing
-   - User can click highlighted files to view source
-3. **Main area** — chat interface + code viewer, input bar at bottom
-
-This is the differentiator: making the AI's thinking process visible instead of being a black box.
-
 ## Conventions
 
 - TypeScript strict mode everywhere
@@ -75,15 +90,14 @@ This is the differentiator: making the AI's thinking process visible instead of 
 | Redis | Railway addon or Upstash (symbol cache + embeddings) |
 | File storage | Cloudflare R2 (cloned repos) |
 
-## Planned Features (not yet implemented)
+## Planned Features
 
 ### Next up
-- [ ] Three-panel UI layout (chat sidebar, file tree sidebar, main area)
+- [ ] WebSocket streaming — agent scan state + file tree updates to frontend
+- [ ] Claude agent (Sonnet/Haiku) for codebase Q&A
 - [ ] R2 integration for repo storage (replace disk cloning)
 - [ ] Redis for symbol cache persistence
-- [ ] Claude agent (Sonnet/Haiku) for codebase Q&A
-- [ ] WebSocket streaming — agent state + file tree updates to frontend
-- [ ] Clerk auth + Convex backend
+- [ ] Wire real scan events to file tree animation (replace demo loop)
 
 ### Later
 - [ ] Semantic search with Redis embeddings
